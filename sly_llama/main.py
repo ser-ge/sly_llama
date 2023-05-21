@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from inspect import signature
 from functools import wraps
 from typing import Optional
@@ -17,7 +18,7 @@ class LlmException(Exception):
         super().__init__(self.message)
 
 
-def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt=True, return_llm_output=True):
+def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt=True, return_llm_output=True)-> Callable:
     def decorator(func):
         docs = func.__doc__
         func_signature = signature(func)
@@ -36,6 +37,8 @@ def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt
             if stop_sequence is not None:
                 trunc_output = re.split(stop_sequence, raw_output)[0]
                 trunc_output += stop_sequence
+            else:
+                trunc_output = raw_output
 
             if verbose: print(trunc_output)
 
