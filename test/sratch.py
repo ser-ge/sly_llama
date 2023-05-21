@@ -1,6 +1,6 @@
-
 def test_mrkl_lexer():
     from scratch import MrklLexer
+
     test_output = """
      Thought: I need to use python to generate the fibonacci numbers
         Action: python_repl
@@ -44,6 +44,3 @@ def test_mrkl_lexer():
         Observation
         dfsdff
     """
-
-
-

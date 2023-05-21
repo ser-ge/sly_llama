@@ -149,11 +149,11 @@ def insert_newline_after_match(string, pattern: str = "Action Input:"):
     return string.replace(pattern, pattern + "\n")
 
 
-def mrlkl_agent(
+def mrkl_agent(
     query: str, tools_list: List[Tool], max_iters: int, max_retries: int
 ) -> str | None:
     """
-    Runs the MRLKL agent with the given query, tools list, and maximum number of iterations.
+    Runs the MRKL agent with the given query, tools list, and maximum number of iterations.
 
     Parameters
     ----------
@@ -180,7 +180,6 @@ def mrlkl_agent(
     print(history)
 
     for _ in range(max_iters):
-
         # if chosen action in tool run the tool and set observation
         if mrlkl_output.action in tools:
             current_observation = tools[mrlkl_output.action](mrlkl_output.action_input)

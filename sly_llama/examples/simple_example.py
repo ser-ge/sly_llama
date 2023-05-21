@@ -42,11 +42,12 @@ def add(x: str, y: str) -> str:
 
 add(1, 2)
 
-add(1, 3) + add(1,1)
+add(1, 3) + add(1, 1)
 
 
 # #### Problem: strings don't add, lets try again but with ints
 #
+
 
 # +
 @llm_call(llm)
@@ -56,7 +57,8 @@ def add(x: str, y: str) -> int:
     only return the number and nothing else
     """
 
-add(1, 3) + add(1,1)
+
+add(1, 3) + add(1, 1)
 
 
 # + [markdown]
@@ -65,6 +67,7 @@ Lets make a recipe
 """
 
 # +
+
 
 @llm_call(llm)
 def get_recipe(dish: str, units: str) -> str:
@@ -92,20 +95,26 @@ print(get_recipe("jank", "metric"))
 # +
 from pydantic import BaseModel
 
+
 class Recipe(BaseModel):
     ingridients: str | List[str]
-    instructions : str | List[str]
+    instructions: str | List[str]
     vegan: bool
 
     @classmethod
     def from_llm_output(cls, llm_output: str):
         recipe = {}
-        parts = llm_output.casefold().partition('instructions')
-        recipe['ingridients']  = parts[0].replace('ingridients', '').replace('[],"', '').strip().split('\n')
-        recipe['instructions'] = parts[2].partition('vegan')[0].replace('[],"', '').strip().split('\n')
-        recipe['vegan']  = bool(parts[2].partition('vegan')[1].replace('[],"\n', '').strip())
+        parts = llm_output.casefold().partition("instructions")
+        recipe["ingridients"] = (
+            parts[0].replace("ingridients", "").replace('[],"', "").strip().split("\n")
+        )
+        recipe["instructions"] = (
+            parts[2].partition("vegan")[0].replace('[],"', "").strip().split("\n")
+        )
+        recipe["vegan"] = bool(
+            parts[2].partition("vegan")[1].replace('[],"\n', "").strip()
+        )
         return cls.parse_obj(recipe)
-
 
 
 # + [markdown]
@@ -113,19 +122,22 @@ class Recipe(BaseModel):
 
 #### And ammend the return type
 """
+
+
 # -
 @llm_call(llm)
 def get_recipe(dish: str, units: str) -> Recipe:
-     """
-     Write a resipe for this {dish}
-     Be sure to include all the ingridients in {units} units.
+    """
+    Write a resipe for this {dish}
+    Be sure to include all the ingridients in {units} units.
 
-     ingridients: < neccesary ingridients>
-     intructions: < the instructions for making the dish>
-     vegan : <this value must be one of [True, False] indicating weather the recipe is vegan>
-     """
+    ingridients: < neccesary ingridients>
+    intructions: < the instructions for making the dish>
+    vegan : <this value must be one of [True, False] indicating weather the recipe is vegan>
+    """
 
-recipe = get_recipe('kchapuri', 'metric')
+
+recipe = get_recipe("kchapuri", "metric")
 recipe.instructions
 
 # + [markdown]
@@ -136,9 +148,10 @@ recipe.instructions
 # +
 from sly_llama import JsonBaseModel
 
+
 class Recipe(JsonBaseModel):
     ingridients: str | List[str]
-    instructions : str | List[str]
+    instructions: str | List[str]
     vegan: bool
 
 
@@ -169,12 +182,12 @@ def get_recipe(dish: str, units: str, error_message: str) -> Recipe:
 from sly_llama import LlmException
 
 recipe = None
-error_message = ''
+error_message = ""
 
 while not recipe:
     try:
-        recipe = get_recipe('kchapuri', 'metric', error_message)
-        
+        recipe = get_recipe("kchapuri", "metric", error_message)
+
     except LlmException as e:
         error_message = e.message
         print(error_message)
@@ -183,5 +196,3 @@ recipe
 
 
 recipe.ingridients
-
-

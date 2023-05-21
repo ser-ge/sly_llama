@@ -9,7 +9,6 @@ from pydantic import BaseModel, root_validator, validator
 from sly import Lexer, Parser
 
 
-
 class LlmException(Exception):
     def __init__(self, message):
         self.message = message
@@ -17,8 +16,8 @@ class LlmException(Exception):
     def __str__(self) -> str:
         return self.message
 
-class RetryException(Exception):
 
+class RetryException(Exception):
     def __init__(self, message: str):
         self.message = message
 
@@ -26,18 +25,28 @@ class RetryException(Exception):
         return self.message
 
 
-def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt=True, return_llm_output=True)-> Callable:
+def llm_call(
+    llm,
+    verbose=False,
+    stop_sequence: Optional[str] = None,
+    return_prompt=True,
+    return_llm_output=True,
+) -> Callable:
     def decorator(func):
         docs = func.__doc__
         func_signature = signature(func)
         input_variables = list(iter(func_signature.parameters))
         target_type = func_signature.return_annotation
 
-        cast_func = target_type.from_llm_output if hasattr(target_type, 'from_llm_output') else target_type
+        cast_func = (
+            target_type.from_llm_output
+            if hasattr(target_type, "from_llm_output")
+            else target_type
+        )
 
         @wraps(func)
         def decorated(*args):
-            format_args = {arg : val for arg, val in zip(input_variables, args)}
+            format_args = {arg: val for arg, val in zip(input_variables, args)}
             prompt = docs.format(**format_args)
 
             raw_output = llm(prompt)
@@ -48,7 +57,8 @@ def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt
             else:
                 trunc_output = raw_output
 
-            if verbose: print(trunc_output)
+            if verbose:
+                print(trunc_output)
 
             values_to_return = (cast_func(trunc_output), prompt, trunc_output)
             filters = [True, return_prompt, return_llm_output]
@@ -56,16 +66,16 @@ def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt
             return tuple(v for (v, f) in zip(values_to_return, filters) if f)
 
         return decorated
-    return decorator
 
+    return decorator
 
 
 # Models
 
-class JsonBaseModel(BaseModel):
 
+class JsonBaseModel(BaseModel):
     @classmethod
-    def from_llm_output(cls, text : str):
+    def from_llm_output(cls, text: str):
         """
         TODO search the output to extract JSON
 
@@ -80,12 +90,14 @@ class JsonBaseModel(BaseModel):
         last = text.rfind("}")
 
         text = unicodedata.normalize("NFKD", text[first : last + 1]).encode(
-                "ascii", "ignore"
-            )
+            "ascii", "ignore"
+        )
         try:
             return cls.parse_raw(text)
         except Exception as e:
-            raise LlmException(f"{text} \n The output was not valid JSON, be sure to only provide JSON. Error: {e}")
+            raise LlmException(
+                f"{text} \n The output was not valid JSON, be sure to only provide JSON. Error: {e}"
+            )
 
 
 class SlyBaseModel(BaseModel):
@@ -105,9 +117,7 @@ class SlyBaseModel(BaseModel):
 
     @classmethod
     def from_llm_output(cls, llm_output):
-
         tokens = list(cls.lexer().tokenize(llm_output))
         output_dict = {t.type.lower(): t.value for t in tokens}
 
         return cls.parse_obj(output_dict)
-
