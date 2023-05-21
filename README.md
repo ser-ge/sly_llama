@@ -65,6 +65,7 @@ The return type can be any python class. If the class has a `from_llm_output` me
 pass the output to this method to construct the target class, otherwise it will call the class directly on the output.
 
 The motivation of this library is to provide simple utilities to quickly prototype llm applications without burying the execution chain and output parsing deep in the application. As such a functional approach is preferred over OOP.
+
 For a more complex example using the Sly Lexer for token parsing see the implementation of the [MRKL Agent](https://arxiv.org/abs/2205.00445) in `mrkl_agent.py`.
 
 
