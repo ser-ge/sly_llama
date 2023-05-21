@@ -39,9 +39,7 @@ The `@llm_call(lm)` decorator:
 - calls `llm(promtp)` to generate an output
 - attempts to coerce the output into the type in function return annotation, in this case an `int`
 
-    ```python
-
-
+```python
 from pydantic import BaseModel
 
 class AddOutput(BaseModel):
@@ -62,8 +60,7 @@ def add(x: str, y: str) -> AddOutput:
 
 add(40, 2)
 #> Add Output(answer=42)
-
-    ```
+```
 The return type can be any python class. If the class has a `from_llm_output` method `@llm_call` will
 pass the output to this method to construct the target class, otherwise it will call the class directly on the output.
 
