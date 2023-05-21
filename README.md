@@ -21,10 +21,10 @@ llm = OpenAI()
 
 @llm_call(llm)
 def add(x: str, y: str) -> int:
-"""
-calculate {x} + {y}
-only return the number and nothing else
-"""
+    """
+    calculate {x} + {y}
+    only return the number and nothing else
+    """
 
 add(40, 2)
 #> 42
@@ -55,10 +55,10 @@ class AddOutput(BaseModel):
 
 @llm_call(llm)
 def add(x: str, y: str) -> AddOutput:
-"""
-calculate {x} + {y}
-only return the number and nothing else
-"""
+    """
+    calculate {x} + {y}
+    only return the number and nothing else
+    """
 
 add(40, 2)
 #> Add Output(answer=42)
