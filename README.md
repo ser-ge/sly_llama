@@ -47,7 +47,7 @@ class AddOutput(BaseModel):
 
     @classmethod
     def from_llm_output(cls, llm_output: str):
-    output = {'answer' : int(llm_output.strip())}
+        output = {'answer' : int(llm_output.strip())}
         return cls.parse_obj(output)
 
 
