@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from typing import Callable
 from inspect import signature
 from functools import wraps
 from typing import Optional
@@ -8,8 +8,6 @@ import re
 from pydantic import BaseModel, root_validator, validator
 from sly import Lexer, Parser
 
-from json import JSONDecodeError
-import json
 
 
 class LlmException(Exception):
@@ -84,11 +82,10 @@ class JsonBaseModel(BaseModel):
         text = unicodedata.normalize("NFKD", text[first : last + 1]).encode(
                 "ascii", "ignore"
             )
-
         try:
             return cls.parse_raw(text)
         except Exception as e:
-            raise LlmException(f"{text} \n The output was not valid JSON, be sure to only provide JSON")
+            raise LlmException(f"{text} \n The output was not valid JSON, be sure to only provide JSON. Error: {e}")
 
 
 class SlyBaseModel(BaseModel):

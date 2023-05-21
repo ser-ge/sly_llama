@@ -11,7 +11,7 @@ from sly_llama import llm_call, SlyBaseModel, LlmException
 from langchain import OpenAI
 from langchain.agents import Tool
 
-from sly_llama.main import RetryException
+from sly_llama import RetryException
 
 # TODO set model name in .env
 llm = OpenAI(model_name="gpt-3.5-turbo")
