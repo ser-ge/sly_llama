@@ -18,7 +18,7 @@ llm = OpenAI(model_name="gpt-3.5-turbo")
 class MrklLexer(Lexer):
     """
     Lexer for Mrkl Output
-    This clas is used to parse the raw output into tokens before being vlaidated by
+    This class is used to parse the raw output into tokens before being vlaidated by
     pydantic class.
     """
 
