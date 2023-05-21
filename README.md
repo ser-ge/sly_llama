@@ -59,7 +59,7 @@ def add(x: str, y: str) -> AddOutput:
     """
 
 add(40, 2)
-#> Add Output(answer=42)
+#> AddOutput(answer=42)
 ```
 The return type can be any python class. If the class has a `from_llm_output` method `@llm_call` will
 pass the output to this method to construct the target class, otherwise it will call the class directly on the output.
