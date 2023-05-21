@@ -1,34 +1,40 @@
 ## Sly Llama
 
 
-Sly LLama is for quickly prototyping large language model (llm) applications and is not intended for serious use.
+Sly LLama is a lightweight library for quickly prototyping large language model (llm) applications and is not intended for serious use.
 
-Sly Llama provides the `@llm_call` decorator for turning python functions into llm calls and utility classes to parse the llm output with the [Sly](https://sly.readthedocs.io/en/latest/sly.html#introduction) Lexer class and pydantic BaseModel.
+Sly Llama provides the `@llm_call` decorator for turning python functions into
+llm calls and utility classes to parse the llm output with the
+[Sly](https://sly.readthedocs.io/en/latest/sly.html#introduction) Lexer class
+and [pydantic](https://docs.pydantic.dev/latest/).
 
 Be warned both sly-llama and sly abuse python syntax, your IDE will not be happy.
 
 
 ### Example:
 
-    from sly_llama import llm_call
+```python
+from sly_llama import llm_call
 
-    from langchain.llms import OpenAI
+from langchain.llms import OpenAI
 
-    llm = OpenAI()
+llm = OpenAI()
 
-    @llm_call(llm)
-    def add(x: str, y: str) -> int:
-        """
-        calculate {x} + {y}
-        only return the number and nothing else
-        """
+@llm_call(llm)
+def add(x: str, y: str) -> int:
+"""
+calculate {x} + {y}
+only return the number and nothing else
+"""
 
-    add(40, 2)
-    #> 42
+add(40, 2)
+#> 42
 
+```
 
 Note the doc string of the function is an f-string with inputs matching the function parameters.
 The `@llm_call(lm)` decorator:
+
     - takes the `llm` function as input ( this can be any function that takes and returns strings)
     - formats the doc string of the function with its parameters to generate the prompt
     - calls `llm(promtp)` to generate an output
