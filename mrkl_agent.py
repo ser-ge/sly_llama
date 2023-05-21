@@ -11,6 +11,8 @@ from sly_llama import llm_call, SlyBaseModel, LlmException
 from langchain import OpenAI
 from langchain.agents import Tool
 
+from sly_llama.main import RetryException
+
 # TODO set model name in .env
 llm = OpenAI(model_name="gpt-3.5-turbo")
 
@@ -178,6 +180,8 @@ def mrlkl_agent(
     print(history)
 
     for _ in range(max_iters):
+
+        # if chosen action in tool run the tool and set observation
         if mrlkl_output.action in tools:
             current_observation = tools[mrlkl_output.action](mrlkl_output.action_input)
         else:
@@ -185,6 +189,7 @@ def mrlkl_agent(
                 f"{mrkl_start.action} not a valid tool, try another one"
             )
 
+        # run a single mrkl step until the output can be parsed correctly or max_retries is reached
         for i in range(max_retries):
             try:
                 mrlkl_output, last_prompt, raw_output = mrkl_step(
@@ -192,12 +197,15 @@ def mrlkl_agent(
                 )
                 break
 
+            # add error message to observation for the next retry loop
             except LlmException as e:
                 current_observation = e.message
                 mrlkl_output, last_prompt, raw_output = mrkl_step(
                     history, current_observation
                 )
 
+        else:
+            raise RetryException("mrkl_step exceeeded retries, last error: {e}")
         # the llm one shot learns better if it can see last action separated by new line, esp code indent
         last_output = insert_newline_after_match(raw_output, "Action Input:")
 

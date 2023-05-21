@@ -51,6 +51,15 @@ def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt
     return decorator
 
 
+class RetryException(Exception):
+
+    def __init__(self, message: str):
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
+
+# Models
 
 class JsonBaseModel(BaseModel):
 
