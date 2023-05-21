@@ -120,8 +120,6 @@ def get_recipe(dish: str, units: str) -> Recipe:
      Write a resipe for this {dish}
      Be sure to include all the ingridients in {units} units.
 
-     You should provide your response in JSON Format
-
      ingridients: < neccesary ingridients>
      intructions: < the instructions for making the dish>
      vegan : <this value must be one of [True, False] indicating weather the recipe is vegan>
@@ -181,14 +179,9 @@ while not recipe:
         error_message = e.message
         print(error_message)
 recipe
-
-
-# +
-
-
-
-
-
 # -
+
+
+recipe.ingridients
 
 

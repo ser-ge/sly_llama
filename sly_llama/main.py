@@ -1,5 +1,6 @@
 from inspect import signature
 from functools import wraps
+from typing import Optional
 import unicodedata
 import re
 
@@ -16,7 +17,7 @@ class LlmException(Exception):
         super().__init__(self.message)
 
 
-def llm_call(llm, verbose=False):
+def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt=True, return_llm_output=True):
     def decorator(func):
         docs = func.__doc__
         func_signature = signature(func)
@@ -24,6 +25,7 @@ def llm_call(llm, verbose=False):
         target_type = func_signature.return_annotation
 
         cast_func = target_type.from_llm_output if hasattr(target_type, 'from_llm_output') else target_type
+
         @wraps(func)
         def decorated(*args):
             format_args = {arg : val for arg, val in zip(input_variables, args)}
@@ -31,9 +33,16 @@ def llm_call(llm, verbose=False):
 
             raw_output = llm(prompt)
 
-            if verbose: print(raw_output)
+            if stop_sequence is not None:
+                trunc_output = re.split(stop_sequence, raw_output)[0]
+                trunc_output += stop_sequence
 
-            return cast_func(llm(prompt))
+            if verbose: print(trunc_output)
+
+            values_to_return = (cast_func(trunc_output), prompt, trunc_output)
+            filters = [True, return_prompt, return_llm_output]
+
+            return tuple(v for (v, f) in zip(values_to_return, filters) if f)
 
         return decorated
     return decorator
@@ -66,4 +75,27 @@ class JsonBaseModel(BaseModel):
         except Exception as e:
             raise LlmException(f"{text} \n The output was not valid JSON, be sure to only provide JSON")
 
+
+class SlyBaseModel(BaseModel):
+    """
+    BaseModel to be used with sly lexer. Implements from_llm_output which calls
+    the provided lexer to tokenise llm_output before building the pydantic model.
+
+    Any subclass should implement the lexer() static method which returns the Lexer to be used
+    to tokenise the raw output before being validated.
+
+    TODO currently assumes unique values for each token, handle multiple.
+    """
+
+    @staticmethod
+    def lexer() -> Lexer:
+        raise NotImplementedError
+
+    @classmethod
+    def from_llm_output(cls, llm_output):
+
+        tokens = list(cls.lexer().tokenize(llm_output))
+        output_dict = {t.type.lower(): t.value for t in tokens}
+
+        return cls.parse_obj(output_dict)
 
