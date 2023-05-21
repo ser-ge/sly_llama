@@ -172,7 +172,7 @@ def mrkl_agent(
     tool_names = str(tools.keys())
 
     # Start the MRLKL agent with the initial conditions
-    mrlkl_output, first_prompt, raw_output = mrkl_start(tool_info, tool_names, query)
+    mrkl_output, first_prompt, raw_output = mrkl_start(tool_info, tool_names, query)
 
     last_output = insert_newline_after_match(raw_output, "Action Input:")
     history = first_prompt + last_output
@@ -181,8 +181,8 @@ def mrkl_agent(
 
     for _ in range(max_iters):
         # if chosen action in tool run the tool and set observation
-        if mrlkl_output.action in tools:
-            current_observation = tools[mrlkl_output.action](mrlkl_output.action_input)
+        if mrkl_output.action in tools:
+            current_observation = tools[mrkl_output.action](mrkl_output.action_input)
         else:
             current_observation = (
                 f"{mrkl_start.action} not a valid tool, try another one"
@@ -191,7 +191,7 @@ def mrkl_agent(
         # run a single mrkl step until the output can be parsed correctly or max_retries is reached
         for i in range(max_retries):
             try:
-                mrlkl_output, last_prompt, raw_output = mrkl_step(
+                mrkl_output, last_prompt, raw_output = mrkl_step(
                     history, current_observation
                 )
                 break
@@ -203,11 +203,12 @@ def mrkl_agent(
         else:
             raise RetryException("mrkl_step exceeeded retries, last error: {e}")
         # the llm one shot learns better if it can see last action separated by new line, esp code indent
+
         last_output = insert_newline_after_match(raw_output, "Action Input:")
 
         history = last_prompt + last_output
         print(last_prompt)
         print(last_output)
 
-        if mrlkl_output.final_answer:
-            return mrlkl_output.final_answer
+        if mrkl_output.final_answer:
+            return mrkl_output.final_answer

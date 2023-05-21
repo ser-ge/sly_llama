@@ -25,7 +25,7 @@ def test_mrkl_fib():
 
     tools = [repl_tool]
 
-    output = mrkl_agent(query, tools, max_iters=10, max_retries=4)
+    output = mrkl_agent(query, tools, max_iters=3, max_retries=4)
 
     expected_output = "0, 1, 1, 2, 3, 5, 8, 13, 21, 34"
 
