@@ -199,10 +199,7 @@ def mrlkl_agent(
 
             # add error message to observation for the next retry loop
             except LlmException as e:
-                current_observation = e.message
-                mrlkl_output, last_prompt, raw_output = mrkl_step(
-                    history, current_observation
-                )
+                current_observation = current_observation + e.message
 
         else:
             raise RetryException("mrkl_step exceeeded retries, last error: {e}")
