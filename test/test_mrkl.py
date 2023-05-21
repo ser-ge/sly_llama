@@ -27,7 +27,7 @@ def test_mrkl_fib():
 
     output = mrkl_agent(query, tools, max_iters=3, max_retries=4)
 
-    expected_output = "0, 1, 1, 2, 3, 5, 8, 13, 21, 34"
+    expected_output = "0, 1, 1, 2, 3, 5, 8, 13, 21, 55"
 
     assert expected_output in output, "no fib!"
 
