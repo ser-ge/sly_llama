@@ -15,7 +15,17 @@ import json
 class LlmException(Exception):
     def __init__(self, message):
         self.message = message
-        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return self.message
+
+class RetryException(Exception):
+
+    def __init__(self, message: str):
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
 
 
 def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt=True, return_llm_output=True)-> Callable:
@@ -51,13 +61,6 @@ def llm_call(llm, verbose=False, stop_sequence: Optional[str]=None,return_prompt
     return decorator
 
 
-class RetryException(Exception):
-
-    def __init__(self, message: str):
-        self.message = message
-
-    def __str__(self) -> str:
-        return self.message
 
 # Models
 
