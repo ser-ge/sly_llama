@@ -2,64 +2,30 @@
 Using sly and sly_llama to implement MRKL
 """
 
-from typing import List, Optional
-from pydantic import root_validator
-from sly import Lexer
+from typing import Callable, ContextManager, List, Optional
+from pydantic import BaseModel, root_validator
 
-from sly_llama import llm_call, SlyBaseModel, LlmException
+from sly_llama import llm_call, LlmException
+from sly_llama.models import LlmOutput
 
 from langchain import OpenAI
-from langchain.agents import Tool
 
 from sly_llama import RetryException
 
 # TODO set model name in .env
-llm = OpenAI(model_name="gpt-3.5-turbo")
+# TODO factor out langchain lllm, call OpenAI directly
+llm = OpenAI(model_name="gpt-4")
 
 
-class MrklLexer(Lexer):
-    """
-    Lexer for Mrkl Output
-    This class is used to parse the raw output into tokens before being vlaidated by
-    pydantic class.
-    """
-
-    # define the tokens we are going to match
-    tokens = {ACTION_INPUT, ACTION, THOUGHT, FINAL_ANSWER}
-
-    # ignore new lines so that we can match multiline tokens
-    ignore = "\t \n"
-
-    # define regex for each token and clean the captured string value in token.value
-
-    @_(r"Thought(.|\n)*?(?=Final Answer|Action)")
-    def THOUGHT(self, token):
-        token.value = token.value.replace("Thought", "").replace(":", "").strip("\n ")
-        return token
-
-    @_(r"Action Input(.|\n)*?(?=Observation)")
-    def ACTION_INPUT(self, token):
-        token.value = token.value.replace("Action Input:", "")
-        return token
-
-    @_(r"Action(.|\n)*(?=Action Input)")
-    def ACTION(self, token):
-        token.value = token.value.replace("Action", "").replace(":", "").strip("\n ")
-        return token
-
-    @_(r"Final Answer(.|\n)*")
-    def FINAL_ANSWER(self, token):
-        token.value = token.value.replace("Final Answer", "").strip("\n ")
-
-        return token
-
-    # this is a strict lexer, we must ignore unmatched tokens else error.
-    ignore_rest = ".+"
-
-
-class MrklOutput(SlyBaseModel):
+class MrklOutput(LlmOutput):
     """
     Model to validate the output of the Mrkl llm call
+
+    Attributes:
+        action: The action taken by the Mrkl llm
+        action_input: The input to the action
+        thought: The thought process of the Mrkl llm
+        final_answer: The final answer of the Mrkl llm
     """
 
     action: Optional[str] = None
@@ -68,13 +34,21 @@ class MrklOutput(SlyBaseModel):
     final_answer: Optional[str] = None
 
     @staticmethod
-    def lexer():
-        """
-        Lexer for the Mrkl output, this tokenises the raw output before
-        MrklOutput is built form the resulting dict. See SlyBaseModel for
-        more info.
-        """
-        return MrklLexer()
+    @_(r"Thought:((.|\n)*?)(?=Action|Final)")
+    def THOUGHT(matches: List):
+        return matches[0][1].strip()
+
+    @_(r"Action Input:((.|\n)*?)(?=Observation)")
+    def ACTION_INPUT(matches: List):
+        return matches[0][1].strip()
+
+    @_(r"Action:((.|\n)*?)(?=Action Input)")
+    def ACTION(matches):
+        return matches[0][1].strip()
+
+    @_(r"Final Answer:((.|\n |\s)*)")
+    def FINAL_ANSWER(matches):
+        return matches[0][1].strip()
 
     @root_validator(pre=True)
     def check_action_or_answer(cls, values):
@@ -131,26 +105,27 @@ def mrkl_start(tools, tool_names, request) -> MrklOutput:
 
 @llm_call(
     llm,
-    stop_sequence="Observation",
+    stop_sequence="\nObservation",
     verbose=False,
     return_prompt=True,
     return_llm_output=True,
 )
-def mrkl_step(history, current_observation) -> MrklOutput:
+def mrkl_step(history:str, current_observation:str) -> MrklOutput:
     """
-    {history}{current_observation}
+    {history}
+    {current_observation}
     """
 
 
-def insert_newline_after_match(string, pattern: str = "Action Input:"):
+
+def insert_newline_after_match(string: str, pattern: str = "Action Input:"):
     """
     Inserts a newline after the given pattern in the given string.
     """
     return string.replace(pattern, pattern + "\n")
 
-
 def mrkl_agent(
-    query: str, tools_list: List[Tool], max_iters: int, max_retries: int
+    query: str, tools_list: List, max_iters: int, max_retries: int
 ) -> str | None:
     """
     Runs the MRKL agent with the given query, tools list, and maximum number of iterations.
@@ -172,7 +147,18 @@ def mrkl_agent(
     tool_names = str(tools.keys())
 
     # Start the MRLKL agent with the initial conditions
-    mrkl_output, first_prompt, raw_output = mrkl_start(tool_info, tool_names, query)
+
+    for _ in range(max_retries):
+
+        try:
+            mrkl_output, first_prompt, raw_output = mrkl_start(tool_info, tool_names, query)
+            break
+
+        except LlmException as e:
+            query = query + '\n' + e.message
+            error_message = e
+    else:
+        raise RetryException(error_message)
 
     last_output = insert_newline_after_match(raw_output, "Action Input:")
     history = first_prompt + last_output
@@ -180,16 +166,17 @@ def mrkl_agent(
     print(history)
 
     for _ in range(max_iters):
+
         # if chosen action in tool run the tool and set observation
         if mrkl_output.action in tools:
             current_observation = tools[mrkl_output.action](mrkl_output.action_input)
         else:
             current_observation = (
-                f"{mrkl_start.action} not a valid tool, try another one"
+                f"{mrkl_output.action} not a valid tool, try another one"
             )
 
         # run a single mrkl step until the output can be parsed correctly or max_retries is reached
-        for i in range(max_retries):
+        for _ in range(max_retries):
             try:
                 mrkl_output, last_prompt, raw_output = mrkl_step(
                     history, current_observation
@@ -199,11 +186,12 @@ def mrkl_agent(
             # add error message to observation for the next retry loop
             except LlmException as e:
                 current_observation = current_observation + e.message
+                error_message =e
 
         else:
-            raise RetryException("mrkl_step exceeeded retries, last error: {e}")
-        # the llm one shot learns better if it can see last action separated by new line, esp code indent
+            raise RetryException(f"mrkl_step exceeeded retries, last error: {error_message}")
 
+        # the llm one shot learns better if it can see last action separated by new line, esp code indent
         last_output = insert_newline_after_match(raw_output, "Action Input:")
 
         history = last_prompt + last_output

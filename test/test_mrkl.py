@@ -12,7 +12,6 @@ def test_mrkl_fib():
         And runs the repl
         """
         input_code = input_code.strip("\n").strip("`").strip("python")
-        print(input_code)
         return python_repl.run(input_code)
 
     repl_tool = Tool(
@@ -21,16 +20,12 @@ def test_mrkl_fib():
         func=strip_code,
     )
 
-    query = "use python to find the first 10 fib numbers"
+    query = "use python to find the first 10 fib numbers, start with 0 as the first fib number"
 
     tools = [repl_tool]
 
     output = mrkl_agent(query, tools, max_iters=3, max_retries=4)
 
-    expected_output = "0, 1, 1, 2, 3, 5, 8, 13, 21, 55"
+    expected_output = "0, 1, 1, 2, 3, 5, 8, 13, 21, 34"
 
     assert expected_output in output, "no fib!"
-
-
-if __name__ == "__main__":
-    test_mrkl_fib()
